@@ -18,7 +18,9 @@ import environ
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Initialise environment variables
-env = environ.Env()
+env = environ.Env(
+    DEBUG=(bool, False),
+)
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
 
@@ -88,11 +90,11 @@ REST_FRAMEWORK ={
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("DB_NAME", default="mydatabase"),
-        "USER": env("DB_USER", default="myuser"),
-        "PASSWORD": env("DB_PASSWORD", default="mypassword"),
-        "HOST": env("DB_HOST", default="localhost"),
-        "PORT": env("DB_PORT", default="5432"),
+        "NAME": env("DB_NAME"),
+        "USER": env("DB_USER"),
+        "PASSWORD": env("DB_PASSWORD"),
+        "HOST": env("DB_HOST"),
+        "PORT": env("DB_PORT"),
     }
 }
 
