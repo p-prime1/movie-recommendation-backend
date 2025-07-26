@@ -37,3 +37,5 @@ env/
 venv/
 ENV/
 env.bak/
+
+migrations/

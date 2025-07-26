@@ -1,6 +1,6 @@
 from django.shortcuts import render
-from .modesl import Movie, Genre, Rating, UserProfile, Review
-from .serializers import MovieSerializer, GenreSerializer, RatingSerializer, UserProfileSerializer, ReviewSerializer
+from .models import Movie, Genre, Rating, UserProfile
+from .serializers import MovieSerializer, GenreSerializer, RatingSerializer, UserProfileSerializer
 from rest_framework import viewsets
 # Create your views here.
 
@@ -25,6 +25,3 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     serializer_class = UserProfileSerializer
 
 
-class ReviewViewSet(viewsets.ModelViewSet):
-    queryset = Review.objects.all()
-    serializer_class = ReviewSerializer

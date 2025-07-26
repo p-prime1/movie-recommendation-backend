@@ -8,7 +8,7 @@ class Movie(models.Model):
     release_date = models.DateField()
     duration = models.IntegerField(help_text="Duration in minutes")
     genres = models.ManyToManyField('Genre', related_name='movies')
-    average_rating = models.floatField(default=0.0)
+    average_rating = models.FloatField(default=0.0)
 
     rating = models.DecimalField(max_digits=3, decimal_places=1)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -34,7 +34,7 @@ class Genre(models.Model):
         verbose_name_plural = 'Genres'
 
 
-class Rating(modesl.Model):
+class Rating(models.Model):
     user = models.ForeignKey('auth.user', on_delete=models.CASCADE)
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='ratings')
     score = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)], help_text="Rating score from 1 to 5")
