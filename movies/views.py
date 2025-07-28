@@ -37,3 +37,26 @@ class TMDBSearchView(APIView):
         
         data = search_movies(query)
         return Response(data)
+
+
+    def post(self, request):
+        data = request.data
+
+        genres = []
+        for genre_name in data.get('genres', []):
+            genre, _ = Genre.objects.get_or_create(name=genre_name)
+            genres.append(genre)
+
+        movie = Movie.objects.create(
+            title = data.get("title"),
+            description = data.get("description"),
+            release_date = data.get("release_date"),
+            duration = data.get("duration", 0),
+            rating = data.get("rating"),
+            overview = data.get("overview"),
+        )
+
+        movie.genres.set(genres)
+        movies.save()
+
+        return Response({"message": "Movie saved succesfully!"}, status=status.HTTP_201_CREATED)
