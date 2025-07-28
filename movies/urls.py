@@ -1,6 +1,6 @@
 from rest_framework.routers import DefaultRouter
-from .views import MovieViewSet, GenreViewSet, UserProfileViewSet, RatingViewSet
-
+from .views import MovieViewSet, GenreViewSet, UserProfileViewSet, RatingViewSet, TMDBSearchView
+from django.urls import path
 
 router = DefaultRouter()
 router.register(r'movies', MovieViewSet)
@@ -9,3 +9,6 @@ router.register(r'users', UserProfileViewSet)
 router.register(r'ratings', RatingViewSet)
 
 urlpatterns = router.urls
+urlpatterns += [
+    path('tmdb/search/', TMDBSearchView.as_view(), name='tmdb-search'),
+]
