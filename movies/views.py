@@ -8,6 +8,7 @@ from .tmdb import search_movies
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Avg
+from django.core.cache import cache
 # Create your views here.
 
 
@@ -95,7 +96,7 @@ class RecommendationView(APIView):
             serializer = MovieSerializer(popular_movies, many=True)
             return Response(serializer.data)
 
-            
+
         sorted_genres = sorted(top_genres.items(), key=lambda x: x[1], reverse=True)
         top_genre_ids = [g[0] for g in sorted_genres[:3]]
 
@@ -104,4 +105,21 @@ class RecommendationView(APIView):
         recommended_movies = Movie.objects.filter(genres__in=top_genre_ids).exclude(id__in=rated_movie_ids).distinct()[:10]
 
         serializer = MovieSerializer(recommended_movies, many=True)
+        return Response(serializer.data)
+
+
+class MovieListView(APIView):
+    """List all movies.
+    """
+    def get(self, request):
+        cache_key = 'all_movies'
+        movies = cache.get(cache_key)
+
+        if not movies:
+            movies = Movie.objects.all()
+            serializer = MovieSerializer(movies, many=True)
+            cache.set(cache_key, serializer.data, timeout=60*5)
+        else:
+            serializer = MovieSerializer(movies, many=True)
+
         return Response(serializer.data)
