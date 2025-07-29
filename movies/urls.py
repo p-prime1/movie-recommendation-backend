@@ -11,4 +11,5 @@ router.register(r'ratings', RatingViewSet)
 urlpatterns = router.urls
 urlpatterns += [
     path('tmdb/search/', TMDBSearchView.as_view(), name='tmdb-search'),
+    path('recommendations/', RecommendationView.as_view(), name='recommendations'),
 ]

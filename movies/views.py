@@ -5,15 +5,22 @@ from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response 
 from .tmdb import search_movies
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from django.db.models import Avg
 # Create your views here.
 
 
 class MovieViewSet(viewsets.ModelViewSet):
+    """ViewSet for movies.
+    """
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
 
 
 class GenreViewSet(viewsets.ModelViewSet):
+    """ViewSet for genres.
+    """
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
@@ -24,11 +31,16 @@ class RatingViewSet(viewsets.ModelViewSet):
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
+    """ViewSet for user profiles.
+    """
+
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
 
 
 class TMDBSearchView(APIView):
+    """Search for movies using TMDB API.
+    """
     def get(self, request):
         query = request.query_params.get('q')
 
@@ -60,3 +72,36 @@ class TMDBSearchView(APIView):
         movies.save()
 
         return Response({"message": "Movie saved succesfully!"}, status=status.HTTP_201_CREATED)
+
+
+class RecommendationView(APIView):
+    permission_classes = [IsAuthenticated]
+    """Recommend movies based on user's top rated genres.
+    """
+    def get(self, request):
+        user = request.user
+
+        ratings = Rating.objects.filter(user=user).order_by('-score')
+        top_genres = {}
+
+        for rating in ratings:
+            for genre in rating.movie.genres.all():
+                top_genres[genre.id] = top_genres.get(genre.id, 0) + rating.score
+
+        if not top_genres:
+            popular_movies = Movie.objects.annotate(
+                average_rating=Avg('ratings__score')
+            ).order_by('-avgerage_rating')[:10]
+            serializer = MovieSerializer(popular_movies, many=True)
+            return Response(serializer.data)
+
+            
+        sorted_genres = sorted(top_genres.items(), key=lambda x: x[1], reverse=True)
+        top_genre_ids = [g[0] for g in sorted_genres[:3]]
+
+        # Step 2: Recommend movies in those genres that user hasn’t rated yet
+        rated_movie_ids = ratings.values_list('movie_id', flat=True)
+        recommended_movies = Movie.objects.filter(genres__in=top_genre_ids).exclude(id__in=rated_movie_ids).distinct()[:10]
+
+        serializer = MovieSerializer(recommended_movies, many=True)
+        return Response(serializer.data)
