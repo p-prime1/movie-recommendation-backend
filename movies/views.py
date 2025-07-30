@@ -87,7 +87,6 @@ class TMDBSearchView(APIView):
             release_date = data.get("release_date"),
             duration = data.get("duration", 0),
             rating = data.get("rating"),
-            overview = data.get("overview"),
         )
 
         movie.genres.set(genres)
@@ -97,7 +96,7 @@ class TMDBSearchView(APIView):
 
 
 class RecommendationView(APIView):
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
     """Recommend movies based on user's top rated genres.
     """
     def get(self, request):
@@ -137,10 +136,9 @@ class MovieListView(APIView):
         movies = cache.get(cache_key)
 
         if not movies:
-            movies = Movie.objects.all()
+            queryset = Movie.objects.all()
             serializer = MovieSerializer(movies, many=True)
-            cache.set(cache_key, serializer.data, timeout=60*5)
-        else:
-            serializer = MovieSerializer(movies, many=True)
+            movies = serializer.data
+            cache.set(cache_key, movies, timeout=60*5)
 
-        return Response(serializer.data)
+        return Response(movies)
