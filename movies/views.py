@@ -4,7 +4,8 @@ from .serializers import (
     MovieSerializer, 
     GenreSerializer, 
     RatingSerializer, 
-    UserProfileSerializer
+    UserProfileSerializer,
+    UserSerializer
     )
 from rest_framework import viewsets
 from rest_framework.views import APIView
@@ -23,7 +24,7 @@ from django.contrib.auth.models import User
 
 class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
-    serializer_class = UserProfileSerializer
+    serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
     def perform_create(self, serializer):

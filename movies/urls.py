@@ -1,5 +1,11 @@
 from rest_framework.routers import DefaultRouter
-from .views import MovieViewSet, GenreViewSet, UserProfileViewSet, RatingViewSet, TMDBSearchView, RecommendationView
+from .views import ( MovieViewSet,
+    GenreViewSet,
+    UserProfileViewSet,
+    RatingViewSet,
+    TMDBSearchView,
+    RecommendationView,
+    SignupView,)
 from django.urls import path
 
 router = DefaultRouter()
