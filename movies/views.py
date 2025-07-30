@@ -27,10 +27,9 @@ class SignupView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
+    
     def perform_create(self, serializer):
-        user = serializer.save()
-        UserProfile.objects.create(user=user)
-        return user
+        return serializer.save()
 
 
         

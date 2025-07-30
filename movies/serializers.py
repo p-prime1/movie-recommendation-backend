@@ -45,7 +45,6 @@ class UserSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
             email=validated_data.get('email', '')
         )
-        UserProfile.objects.create(user=user) 
         return user
 
 
