@@ -27,7 +27,7 @@ class SignupView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
-    
+
     def perform_create(self, serializer):
         return serializer.save()
 
@@ -91,7 +91,7 @@ class TMDBSearchView(APIView):
         )
 
         movie.genres.set(genres)
-        movies.save()
+        movie.save()
 
         return Response({"message": "Movie saved succesfully!"}, status=status.HTTP_201_CREATED)
 
