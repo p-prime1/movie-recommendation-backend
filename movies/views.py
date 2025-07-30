@@ -1,17 +1,38 @@
 from django.shortcuts import render
 from .models import Movie, Genre, Rating, UserProfile
-from .serializers import MovieSerializer, GenreSerializer, RatingSerializer, UserProfileSerializer
+from .serializers import (
+    MovieSerializer, 
+    GenreSerializer, 
+    RatingSerializer, 
+    UserProfileSerializer
+    )
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response 
 from .tmdb import search_movies
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Avg
 from django.core.cache import cache
+from rest_framework import generics
+from django.contrib.auth.models import User
+
 # Create your views here.
 
 
+
+class SignupView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserProfileSerializer
+    permission_classes = [AllowAny]
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+        UserProfile.objects.create(user=user)
+        return user
+
+
+        
 class MovieViewSet(viewsets.ModelViewSet):
     """ViewSet for movies.
     """
