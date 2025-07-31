@@ -1,21 +1,57 @@
 from django.shortcuts import render
 from .models import Movie, Genre, Rating, UserProfile
-from .serializers import MovieSerializer, GenreSerializer, RatingSerializer, UserProfileSerializer
+from .serializers import (
+    MovieSerializer, 
+    GenreSerializer, 
+    RatingSerializer, 
+    UserProfileSerializer,
+    UserSerializer
+    )
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response 
 from .tmdb import search_movies
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Avg
+from django.core.cache import cache
+from rest_framework import generics
+from django.contrib.auth.models import User
+
 # Create your views here.
 
 
+
+class SignupView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+
+
+    def perform_create(self, serializer):
+        return serializer.save()
+
+
+        
 class MovieViewSet(viewsets.ModelViewSet):
     """ViewSet for movies.
     """
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
+
+    def list(self, request, *args, **kwargs):
+        cache_key = 'all_movies'
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            return Response(cached_data)
+
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        cache.set(cache_key, data, timeout=60*5)
+
+        return Response(data)
 
 
 class GenreViewSet(viewsets.ModelViewSet):
@@ -65,17 +101,16 @@ class TMDBSearchView(APIView):
             release_date = data.get("release_date"),
             duration = data.get("duration", 0),
             rating = data.get("rating"),
-            overview = data.get("overview"),
         )
 
         movie.genres.set(genres)
-        movies.save()
+        movie.save()
 
         return Response({"message": "Movie saved succesfully!"}, status=status.HTTP_201_CREATED)
 
 
 class RecommendationView(APIView):
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated]
     """Recommend movies based on user's top rated genres.
     """
     def get(self, request):
@@ -95,7 +130,7 @@ class RecommendationView(APIView):
             serializer = MovieSerializer(popular_movies, many=True)
             return Response(serializer.data)
 
-            
+
         sorted_genres = sorted(top_genres.items(), key=lambda x: x[1], reverse=True)
         top_genre_ids = [g[0] for g in sorted_genres[:3]]
 
