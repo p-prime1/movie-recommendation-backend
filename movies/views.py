@@ -39,6 +39,20 @@ class MovieViewSet(viewsets.ModelViewSet):
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
 
+    def list(self, request, *args, **kwargs):
+        cache_key = 'all_movies'
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            return Response(cached_data)
+
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        cache.set(cache_key, data, timeout=60*5)
+
+        return Response(data)
+
 
 class GenreViewSet(viewsets.ModelViewSet):
     """ViewSet for genres.
@@ -126,19 +140,3 @@ class RecommendationView(APIView):
 
         serializer = MovieSerializer(recommended_movies, many=True)
         return Response(serializer.data)
-
-
-class MovieListView(APIView):
-    """List all movies.
-    """
-    def get(self, request):
-        cache_key = 'all_movies'
-        movies = cache.get(cache_key)
-
-        if not movies:
-            queryset = Movie.objects.all()
-            serializer = MovieSerializer(movies, many=True)
-            movies = serializer.data
-            cache.set(cache_key, movies, timeout=60*5)
-
-        return Response(movies)

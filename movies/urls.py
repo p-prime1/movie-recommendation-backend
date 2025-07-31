@@ -5,8 +5,7 @@ from .views import ( MovieViewSet,
     RatingViewSet,
     TMDBSearchView,
     RecommendationView,
-    SignupView,
-    MovieListView)
+    SignupView,)
 from django.urls import path
 
 router = DefaultRouter()
@@ -20,5 +19,4 @@ urlpatterns += [
     path('tmdb/search/', TMDBSearchView.as_view(), name='tmdb-search'),
     path('recommendations/', RecommendationView.as_view(), name='recommendations'),
     path('signup/', SignupView.as_view(), name='signup'),
-    path('list/', MovieListView.as_view(), name='movie-list'),
 ]
