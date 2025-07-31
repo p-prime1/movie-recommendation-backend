@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Genre, Rating, UserProfile, Movie
+from django.contrib.auth.models import User
 
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
@@ -9,6 +10,8 @@ class GenreSerializer(serializers.ModelSerializer):
 
 class MovieSerializer(serializers.ModelSerializer):
 
+    genres = GenreSerializer(many=True, read_only=True)
+    
     class Meta:
         model = Movie
         fields = '__all__'
@@ -27,6 +30,24 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = ['user', 'bio', 'birth_date', 'profile_picture', 'preferred_genres']
+
+
+class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+
+    class Meta:
+        model = User
+        fields = ['username', 'password', 'email']
+        extra_kwargs = {'password': {'write_only': True}}
+
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            password=validated_data['password'],
+            email=validated_data.get('email', '')
+        )
+        return user
 
 
 
