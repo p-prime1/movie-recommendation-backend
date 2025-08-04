@@ -19,6 +19,7 @@ from rest_framework import generics
 from django.contrib.auth.models import User
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework.pagination import PageNumberPagination
 
 # Create your views here.
 
@@ -132,12 +133,17 @@ class RecommendationView(APIView):
             for genre in rating.movie.genres.all():
                 top_genres[genre.id] = top_genres.get(genre.id, 0) + rating.score
 
+        paginator = self.pagination_class
+
         if not top_genres:
             popular_movies = Movie.objects.annotate(
                 average_rating=Avg('ratings__score')
-            ).order_by('-average_rating').distinct()[:10]
+            ).order_by('-release_date', '-average_rating').distinct()
+
+            result_page = paginator.paginate_queryset(popular_movies, request)
             serializer = MovieSerializer(popular_movies, many=True)
-            return Response(serializer.data)
+            return paginator.get_paginated_response(serializer.data)
+
 
         sorted_genres = sorted(top_genres.items(), key=lambda x: x[1], reverse=True)
         top_genre_ids = [g[0] for g in sorted_genres[:3]]
@@ -145,7 +151,8 @@ class RecommendationView(APIView):
         rated_movie_ids = ratings.values_list('movie_id', flat=True)
         recommended_movies = Movie.objects.filter(
             genres__in=top_genre_ids
-        ).exclude(id__in=rated_movie_ids).distinct()[:10]
+        ).exclude(id__in=rated_movie_ids).distinct()
 
+        result_page = paginator.paginate_queryset(recommended_movies, movies)
         serializer = MovieSerializer(recommended_movies, many=True)
-        return Response(serializer.data)
+        return paginator.get_paginated_response(serializer.data)
