@@ -17,6 +17,8 @@ from django.db.models import Avg
 from django.core.cache import cache
 from rest_framework import generics
 from django.contrib.auth.models import User
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 # Create your views here.
 
@@ -110,9 +112,16 @@ class TMDBSearchView(APIView):
 
 
 class RecommendationView(APIView):
-    #permission_classes = [IsAuthenticated]
-    """Recommend movies based on user's top rated genres.
+    permission_classes = [IsAuthenticated]
     """
+    Recommend movies based on the user's top-rated genres.
+    If the user hasn't rated any movie yet, return top 10 popular movies.
+    """
+
+    @swagger_auto_schema(
+        operation_description="Returns top 10 recommended movies based on user's genre preferences.",
+        responses={200: MovieSerializer(many=True)}
+    )
     def get(self, request):
         user = request.user
 
@@ -126,17 +135,17 @@ class RecommendationView(APIView):
         if not top_genres:
             popular_movies = Movie.objects.annotate(
                 average_rating=Avg('ratings__score')
-            ).order_by('-avgerage_rating')[:10]
+            ).order_by('-average_rating').distinct()[:10]
             serializer = MovieSerializer(popular_movies, many=True)
             return Response(serializer.data)
-
 
         sorted_genres = sorted(top_genres.items(), key=lambda x: x[1], reverse=True)
         top_genre_ids = [g[0] for g in sorted_genres[:3]]
 
-        # Step 2: Recommend movies in those genres that user hasn’t rated yet
         rated_movie_ids = ratings.values_list('movie_id', flat=True)
-        recommended_movies = Movie.objects.filter(genres__in=top_genre_ids).exclude(id__in=rated_movie_ids).distinct()[:10]
+        recommended_movies = Movie.objects.filter(
+            genres__in=top_genre_ids
+        ).exclude(id__in=rated_movie_ids).distinct()[:10]
 
         serializer = MovieSerializer(recommended_movies, many=True)
         return Response(serializer.data)
