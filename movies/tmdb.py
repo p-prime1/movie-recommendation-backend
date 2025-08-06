@@ -5,6 +5,7 @@ BASE_URL = 'https://api.themoviedb.org/3'
 
 
 def search_movies(query):
+    """Function searches for a movie in tmdb and returns the results"""
     url = f"{BASE_URL}/search/movie"
 
     params = {
