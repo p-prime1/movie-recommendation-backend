@@ -40,6 +40,7 @@ class SignupView(generics.CreateAPIView):
 
         
 class MovieViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     """ViewSet for movies.
     """
     queryset = Movie.objects.all()
@@ -70,6 +71,7 @@ class GenreViewSet(viewsets.ModelViewSet):
 
 
 class RatingViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Rating.objects.all()
     serializer_class = RatingSerializer
 
@@ -121,6 +123,7 @@ class TMDBSearchView(APIView):
 class RecommendationPagination(PageNumberPagination):
     """Custom pagination class for recommmendations"""
     page_size = 10
+    ordering = '-created_at'
 
 
 
@@ -128,6 +131,19 @@ class RecommendationView(APIView):
     """View for getting movie recommendation based on user ratings."""
     permission_classes = [IsAuthenticated]
 
+    def paginate_data(self, queryset, request):
+        paginator = RecommendationPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        if page is not None:
+            serializer = MovieSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        serializer = MovieSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_description="Get movie recommendations based on user's rated genres.",
+        responses={200: MovieSerializer(many=True)}
+    )
     def get(self, request):
         user = request.user
         ratings = Rating.objects.filter(user=user).order_by('-score')
@@ -144,9 +160,7 @@ class RecommendationView(APIView):
             popular_movies = Movie.objects.annotate(
                 avg_rating=Avg('ratings__score')
             ).order_by('-avg_rating').distinct()
-            paginated = paginator.paginate_queryset(popular_movies, request)
-            serializer = MovieSerializer(paginated, many=True)
-            return paginator.get_paginated_response(serializer.data)
+            return self.paginate_data(popular_movies, request)
 
         sorted_genres = sorted(top_genres.items(), key=lambda x: x[1], reverse=True)
         top_genre_ids = [g[0] for g in sorted_genres[:3]]
@@ -156,6 +170,4 @@ class RecommendationView(APIView):
             genres__in=top_genre_ids
         ).exclude(id__in=rated_movie_ids).order_by('-created_at').distinct()
 
-        paginated = paginator.paginate_queryset(recommended_movies, request)
-        serializer = MovieSerializer(paginated, many=True)
-        return paginator.get_paginated_response(serializer.data)
+        return self.paginate_data(recommended_movies, request)
