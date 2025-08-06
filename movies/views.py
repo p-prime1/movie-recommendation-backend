@@ -26,12 +26,15 @@ from django.db.models import Avg
 
 
 class SignupView(generics.CreateAPIView):
+    """Signup view for creating new users.
+    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
 
     def perform_create(self, serializer):
+        """Creates a user profile when a new user signs up"""
         return serializer.save()
 
 
@@ -43,6 +46,8 @@ class MovieViewSet(viewsets.ModelViewSet):
     serializer_class = MovieSerializer
 
     def list(self, request, *args, **kwargs):
+        """List all movies available in the database."""
+        # Check if the data is cached
         cache_key = 'all_movies'
         cached_data = cache.get(cache_key)
 
@@ -91,6 +96,7 @@ class TMDBSearchView(APIView):
 
 
     def post(self, request):
+        """Saves a new movie entry to the database."""
         data = request.data
 
         genres = []
@@ -113,11 +119,13 @@ class TMDBSearchView(APIView):
 
 
 class RecommendationPagination(PageNumberPagination):
+    """Custom pagination class for recommmendations"""
     page_size = 10
 
 
 
 class RecommendationView(APIView):
+    """View for getting movie recommendation based on user ratings."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -131,6 +139,7 @@ class RecommendationView(APIView):
 
         paginator = RecommendationPagination()
 
+        # Returns popular movies if the user has no ratings or genres
         if not top_genres:
             popular_movies = Movie.objects.annotate(
                 avg_rating=Avg('ratings__score')
