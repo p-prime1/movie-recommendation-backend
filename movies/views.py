@@ -1,26 +1,29 @@
+# Django
 from django.shortcuts import render
-from .models import Movie, Genre, Rating, UserProfile
-from .serializers import (
-    MovieSerializer, 
-    GenreSerializer, 
-    RatingSerializer, 
-    UserProfileSerializer,
-    UserSerializer
-    )
-from rest_framework import viewsets
-from rest_framework.views import APIView
-from rest_framework.response import Response 
-from .tmdb import search_movies
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.db.models import Avg
-from django.core.cache import cache
-from rest_framework import generics
 from django.contrib.auth.models import User
+from django.core.cache import cache
+from django.db.models import Avg
+
+# DRF
+from rest_framework import viewsets, generics, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.exceptions import ValidationError
+
+# Swagger
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from rest_framework.pagination import PageNumberPagination
-from django.db.models import Avg
+
+# Local
+from .models import Movie, Genre, Rating, UserProfile
+from .serializers import (
+    MovieSerializer, GenreSerializer, RatingSerializer,
+    UserProfileSerializer, UserSerializer
+)
+from .tmdb import search_movies
+
 # Create your views here.
 
 
@@ -75,13 +78,37 @@ class RatingViewSet(viewsets.ModelViewSet):
     queryset = Rating.objects.all()
     serializer_class = RatingSerializer
 
+    def perform_create(self, serializer):
+        movie = serializer.validated_data.get('movie')
+        user = self.request.user
+        # Check if the user has already rated this movie
+        existing_rating = Rating.objects.filter(user=user, movie=movie).first()
+        if existing_rating:
+            raise ValidationError("You have already rated this movie.")
+
+        serializer.save(user=user)
+    def get_queryset(self):
+        """Filter ratings by the authenticated user."""
+        user = self.request.user
+        return Rating.objects.filter(user=user).order_by('-timestamp')
+    
+
 
 class UserProfileViewSet(viewsets.ModelViewSet):
     """ViewSet for user profiles.
     """
-
+    permission_classes = [IsAuthenticated]
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
+    def get_queryset(self):
+        """Filter user profiles by the authenticated user."""
+        user = self.request.user
+        return UserProfile.objects.filter(user=user)
+
+    def perform_update(self, serializer):
+        """Update the user profile."""
+        user = self.request.user
+        serializer.save(user=user)
 
 
 class TMDBSearchView(APIView):
