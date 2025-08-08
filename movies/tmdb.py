@@ -2,6 +2,7 @@ import requests
 from django.conf import settings
 
 BASE_URL = 'https://api.themoviedb.org/3'
+TMDB_API_KEY = settings.TMDB_API_KEY
 
 
 def search_movies(query):
@@ -14,4 +15,17 @@ def search_movies(query):
     }
 
     response = requests.get(url, params)
+    return response.json()
+
+
+ 
+def get_popular_movies(page=1):
+    url = f"{BASE_URL}/movie/popular"
+    params = {
+        "api_key": TMDB_API_KEY,
+        "language": "en-US",
+        "page": page
+    }
+    response = requests.get(url, params=params)
+    response.raise_for_status()
     return response.json()
