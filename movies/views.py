@@ -22,7 +22,7 @@ from .serializers import (
     MovieSerializer, GenreSerializer, RatingSerializer,
     UserProfileSerializer, UserSerializer
 )
-from .tmdb import search_movies
+from .tmdb import search_movies, get_popular_movies
 
 # Create your views here.
 
@@ -184,10 +184,9 @@ class RecommendationView(APIView):
 
         # Returns popular movies if the user has no ratings or genres
         if not top_genres:
-            popular_movies = Movie.objects.annotate(
-                avg_rating=Avg('ratings__score')
-            ).order_by('-avg_rating').distinct()
-            return self.paginate_data(popular_movies, request)
+            page = request.query_params.get('page', 1)
+            tmdb_data = get_popular_movies(page=page)
+            return Response(tmdb_data)
 
         sorted_genres = sorted(top_genres.items(), key=lambda x: x[1], reverse=True)
         top_genre_ids = [g[0] for g in sorted_genres[:3]]
