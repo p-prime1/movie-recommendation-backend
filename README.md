@@ -144,14 +144,6 @@ python manage.py runserver
 
 ---
 
-## 🧪 Tests (Optional)
-
-You can add tests later using:
-```bash
-python manage.py test
-```
-
----
 
 ## 📬 Contact
 
